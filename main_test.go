@@ -7,7 +7,7 @@ import (
 
 func TestGetDataSliceFromFile(t *testing.T) {
 	assert := assert.New(t)
-	dataSlice := getDataSliceFromFile("test")
+	dataSlice, _ := getDataSliceFromFile("test")
 	assert.Equal(dataSlice, []string{"aba", "aaa", "paz"})
 
 }
@@ -23,14 +23,8 @@ func TestWriteSliceToFile(t *testing.T) {
 	slice := []string{"asd", "bsd", "csd"}
 
 	writeSliceToFile(slice, "writeSlice")
-
-	assert.Equal(getDataSliceFromFile("writeSlice"), getDataSliceFromFile("writeSlice"))
-
-	slice = []string{"1", "2", "3"}
-
-	writeSliceToFile(slice, "writeSlice")
-
-	assert.Equal(getDataSliceFromFile("writeSlice"), getDataSliceFromFile("writeSlice"))
+	dataSlice, _ := getDataSliceFromFile("writeSlice")
+	assert.Equal(dataSlice, slice)
 
 }
 
@@ -57,14 +51,14 @@ func TestSortNumbers(t *testing.T) {
 
 func TestSortDataFromColumn(t *testing.T) {
 	assert := assert.New(t)
-	slice := getDataSliceFromFile("test")
+	slice, _ := getDataSliceFromFile("test")
 	assert.Equal([]string{"aaa", "paz", "aba"}, sortDataByColumn(slice, 1))
 
 }
 
 func TestSortDataWithF(t *testing.T) {
 	assert := assert.New(t)
-	slice := getDataSliceFromFile("data")
+	slice, _ := getDataSliceFromFile("data")
 	assert.Equal([]string{"Apple", "Book", "BOOK", "Go", "Hauptbahnhof", "January", "January", "Napkin"}, sortWithF(slice))
 }
 

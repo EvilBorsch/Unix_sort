@@ -11,12 +11,10 @@ import (
 	"strings"
 )
 
-func getDataSliceFromFile(name string) []string {
+func getDataSliceFromFile(name string) ([]string, error) {
 	stringData, err := ioutil.ReadFile(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return strings.Split(string(stringData), "\n")
+
+	return strings.Split(string(stringData), "\n"), err
 }
 
 func printSlice(data []string) {
@@ -32,19 +30,23 @@ func getReversedSlice(data []string) []string {
 	return data
 }
 
-func writeSliceToFile(data []string, fileName string) {
+func writeSliceToFile(data []string, fileName string) error {
 	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer f.Close()
 
-	for _, word := range data {
+	for i, word := range data {
+		if i == len(data)-1 {
+			f.WriteString(word)
+			break
+		}
 		if _, err = f.WriteString(word + "\n"); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
-
+	return nil
 }
 
 func makeUniq(data []string) []string {
@@ -54,13 +56,13 @@ func makeUniq(data []string) []string {
 		if data[i] != data[i+1] {
 			res = append(res, data[i])
 			i++
-		} else {
-			res = append(res, data[i])
-			for i < len(data)-1 && data[i] == data[i+1] {
-				i++
-			}
+		}
+		res = append(res, data[i])
+		for i < len(data)-1 && data[i] == data[i+1] {
 			i++
 		}
+		i++
+
 	}
 
 	if data[len(data)-1] != data[len(data)-2] {
@@ -95,14 +97,13 @@ func makeUniqWithF(data []string) []string {
 		if strings.ToLower(data[i]) != strings.ToLower(data[i+1]) {
 			res = append(res, data[i])
 			i++
-		} else {
-			res = append(res, data[i])
-			for i < len(data)-1 && strings.ToLower(data[i]) == strings.ToLower(data[i+1]) {
-				i++
-			}
-			i++
-
 		}
+		res = append(res, data[i])
+		for i < len(data)-1 && strings.ToLower(data[i]) == strings.ToLower(data[i+1]) {
+			i++
+		}
+		i++
+
 	}
 
 	if data[len(data)-1] != data[len(data)-2] {
@@ -116,7 +117,7 @@ func sortWithF(data []string) []string {
 	return data
 }
 
-func sortWithFlags() {
+func sortWithFlags(result []string) ([]string, string) {
 	var fFlag bool
 	flag.BoolVar(&fFlag, "f", false, "Flag f")
 	var uFlag bool
@@ -132,41 +133,50 @@ func sortWithFlags() {
 
 	flag.Parse()
 
-	filePath := os.Args[len(os.Args)-1]
-
-	result := getDataSliceFromFile(filePath)
 	sort.Strings(result)
-	flags := os.Args[1 : len(os.Args)-1]
-
-	for _, el := range flags {
-		if el == "-f" {
-			result = sortWithF(result)
-		}
-		if el == "-r" {
-			result = getReversedSlice(result)
-		}
-		if el == "-n" {
-			result = sortNumbers(result)
-		}
-		if el == "-u" {
-			if fFlag == true {
-				result = makeUniqWithF(result)
-			} else {
-				result = makeUniq(result)
-			}
-		}
-		if el == "-k" {
-			result = sortDataByColumn(result, kFlag)
+	if fFlag == true {
+		result = sortWithF(result)
+	}
+	if rFlag == true {
+		result = getReversedSlice(result)
+	}
+	if nFlag == true {
+		result = sortNumbers(result)
+	}
+	if uFlag == true {
+		if fFlag == true {
+			result = makeUniqWithF(result)
+		} else {
+			result = makeUniq(result)
 		}
 	}
+	if kFlag != 0 {
+		result = sortDataByColumn(result, kFlag)
+	}
+
+	return result, oFlag
+}
+
+func getDataFromFileByStdIn() ([]string, error) {
+	filePath := os.Args[len(os.Args)-1]
+	return getDataSliceFromFile(filePath)
+}
+
+func printOrWriteToFile(data []string, oFlag string) error {
 	if oFlag != "" {
-		writeSliceToFile(result, oFlag)
-	} else {
-		printSlice(result)
+		err := writeSliceToFile(data, oFlag)
+		return err
 	}
-
+	printSlice(data)
+	return nil
 }
 
 func main() {
-	sortWithFlags()
+	data, _ := getDataFromFileByStdIn()
+	sortedData, oFlag := sortWithFlags(data)
+	err := printOrWriteToFile(sortedData, oFlag)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
